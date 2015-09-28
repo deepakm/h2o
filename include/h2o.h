@@ -102,6 +102,7 @@ typedef struct st_h2o_token_t {
  */
 typedef struct st_h2o_handler_t {
     size_t _config_slot;
+    void *data;
     void (*on_context_init)(struct st_h2o_handler_t *self, h2o_context_t *ctx);
     void (*on_context_dispose)(struct st_h2o_handler_t *self, h2o_context_t *ctx);
     void (*dispose)(struct st_h2o_handler_t *self);

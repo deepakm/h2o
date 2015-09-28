@@ -34,6 +34,7 @@
 
 #define USE_HTTPS 0
 #define USE_MEMCACHED 0
+#define H2O_USE_LIBUV 0
 
 static h2o_pathconf_t *register_handler(h2o_hostconf_t *hostconf, const char *path, int (*on_req)(h2o_handler_t *, h2o_req_t *))
 {
@@ -179,6 +180,7 @@ static int create_listener(void)
 
 #endif
 
+/*
 static int setup_ssl(const char *cert_file, const char *key_file)
 {
     SSL_load_error_strings();
@@ -194,7 +196,6 @@ static int setup_ssl(const char *cert_file, const char *key_file)
         h2o_socket_ssl_async_resumption_setup_ctx(accept_ctx.ssl_ctx);
     }
 
-    /* load certificate and private key */
     if (SSL_CTX_use_certificate_file(accept_ctx.ssl_ctx, cert_file, SSL_FILETYPE_PEM) != 1) {
         fprintf(stderr, "an error occurred while trying to load server certificate file:%s\n", cert_file);
         return -1;
@@ -204,7 +205,6 @@ static int setup_ssl(const char *cert_file, const char *key_file)
         return -1;
     }
 
-/* setup protocol negotiation methods */
 #if H2O_USE_NPN
     h2o_ssl_register_npn_protocols(accept_ctx.ssl_ctx, h2o_http2_npn_protocols);
 #endif
@@ -214,6 +214,7 @@ static int setup_ssl(const char *cert_file, const char *key_file)
 
     return 0;
 }
+*/
 
 int main(int argc, char **argv)
 {
@@ -225,8 +226,8 @@ int main(int argc, char **argv)
     hostconf = h2o_config_register_host(&config, h2o_iovec_init(H2O_STRLIT("default")), 65535);
     register_handler(hostconf, "/post-test", post_test);
     register_handler(hostconf, "/chunked-test", chunked_test);
-    h2o_reproxy_register(register_handler(hostconf, "/reproxy-test", reproxy_test));
-    h2o_file_register(h2o_config_register_path(hostconf, "/"), "examples/doc_root", NULL, NULL, 0);
+    //h2o_reproxy_register(register_handler(hostconf, "/reproxy-test", reproxy_test));
+    //h2o_file_register(h2o_config_register_path(hostconf, "/"), "examples/doc_root", NULL, NULL, 0);
 
 #if H2O_USE_LIBUV
     uv_loop_t loop;
@@ -238,8 +239,8 @@ int main(int argc, char **argv)
     if (USE_MEMCACHED)
         h2o_multithread_register_receiver(ctx.queue, &libmemcached_receiver, h2o_memcached_receiver);
 
-    if (USE_HTTPS && setup_ssl("examples/h2o/server.crt", "examples/h2o/server.key") != 0)
-        goto Error;
+    //if (USE_HTTPS && setup_ssl("examples/h2o/server.crt", "examples/h2o/server.key") != 0)
+    //    goto Error;
 
     /* disabled by default: uncomment the line below to enable access logging */
     /* h2o_access_log_register(&config.default_host, "/dev/stdout", NULL); */
@@ -252,6 +253,7 @@ int main(int argc, char **argv)
         goto Error;
     }
 
+    register_handler(hostconf, "/chunked-test2", chunked_test);
 #if H2O_USE_LIBUV
     uv_run(ctx.loop, UV_RUN_DEFAULT);
 #else
