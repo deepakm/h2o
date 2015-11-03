@@ -300,18 +300,51 @@ void h2o_hex_encode(char *dst, const void *_src, size_t src_len)
     *dst = '\0';
 }
 
-const char *h2o_get_filext(const char *path, size_t len)
+h2o_iovec_t h2o_uri_escape(h2o_mem_pool_t *pool, const char *s, size_t l, const char *preserve_chars)
 {
-    const char *p = path + len;
+    h2o_iovec_t encoded;
+    size_t i, capacity = l * 3 + 1;
+
+    encoded.base = pool != NULL ? h2o_mem_alloc_pool(pool, capacity) : h2o_mem_alloc(capacity);
+    encoded.len = 0;
+
+    /* RFC 3986:
+        path-noscheme = segment-nz-nc *( "/" segment )
+        segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
+        unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+        sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+                     / "*" / "+" / "," / ";" / "="
+    */
+    for (i = 0; i != l; ++i) {
+        int ch = s[i];
+        if (ch >= 0x80 || ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || ('0' <= ch && ch <= '9') || ch == '-' ||
+            ch == '.' || ch == '_' || ch == '~' || ch == '!' || ch == '$' || ch == '&' || ch == '\'' || ch == '(' || ch == ')' ||
+            ch == '*' || ch == '+' || ch == ',' || ch == ';' || ch == '=' ||
+            (preserve_chars != NULL && strchr(preserve_chars, ch) != NULL)) {
+            encoded.base[encoded.len++] = ch;
+        } else {
+            encoded.base[encoded.len++] = '%';
+            encoded.base[encoded.len++] = "0123456789abcdef"[(ch >> 4) & 0xf];
+            encoded.base[encoded.len++] = "0123456789abcdef"[ch & 0xf];
+        }
+    }
+    encoded.base[encoded.len] = '\0';
+
+    return encoded;
+}
+
+h2o_iovec_t h2o_get_filext(const char *path, size_t len)
+{
+    const char *end = path + len, *p = end;
 
     while (--p != path) {
         if (*p == '.') {
-            return p + 1;
+            return h2o_iovec_init(p + 1, end - (p + 1));
         } else if (*p == '/') {
             break;
         }
     }
-    return NULL;
+    return h2o_iovec_init(NULL, 0);
 }
 
 static int is_ws(int ch)
