@@ -1584,6 +1584,8 @@ int main(int argc, char **argv)
         }
     }
 
+
+    fprintf(stderr, "num t %d conn %d list %d\n", conf.num_threads, conf.max_connections, conf.num_listeners);
     setup_signal_handlers();
 
     /* open the log file to redirect STDIN/STDERR to, before calling setuid */
@@ -1664,6 +1666,7 @@ int main(int argc, char **argv)
     assert(conf.num_threads != 0);
 
     /* start the threads */
+    fprintf(stderr, "num t %d conn %d list %d\n", conf.num_threads, conf.max_connections, conf.num_listeners);
     conf.threads = alloca(sizeof(conf.threads[0]) * conf.num_threads);
     size_t i;
     for (i = 1; i != conf.num_threads; ++i) {
